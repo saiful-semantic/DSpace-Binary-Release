@@ -35,25 +35,15 @@ jobs:
     - name: Zip the dist folder
       run: zip -r angular7-dist.zip ./source/dspace-angular-dspace-7.6.2/dist
 
-    # - name: Create GitHub Release
-    #   uses: ncipollo/release-action@v1
-    #   with:
-    #     artifacts: angular7-dist.zip
-    #     token: ${{ secrets.GITHUB_TOKEN }}
-    #     release_name: DSpace Angular v7.6.2
-    #     body: "DSpace Angular ('dist' folder) for version 7.6.2"
-    #     draft: false
-    #     prerelease: false
-
-    # Step 5: Upload as a Release Asset
+    # Step: Upload as a Release Asset
     - name: Create GitHub Release
       id: create_release_7
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: "release_7_6_2"
-        release_name: "Release 7.6.2"
+        tag_name: "angular_7_6_2"
+        release_name: "DSpace Angular 7.6.2"
         draft: false
         prerelease: false
 
