@@ -38,7 +38,7 @@ jobs:
       # Step 4: Zip the compiled target directory
       - name: Archive the Build
         run: |
-          cd dspace/target
+          cd source/DSpace-dspace-7.6.2/dspace/target
           zip -r dspace7-installer.zip dspace-installer
 
       # Step 5: Upload as a Release Asset
