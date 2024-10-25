@@ -33,7 +33,7 @@ jobs:
       - name: Build with Maven
         run: |
           cd source/DSpace-dspace-7.6.2
-          mvn clean package
+          mvn --no-transfer-progress clean package
 
       # Step 4: Zip the compiled target directory
       - name: Archive the Build
@@ -59,6 +59,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./source/target/dspace7-installer.zip
+          asset_path: ./source/DSpace-dspace-7.6.2/target/dspace7-installer.zip
           asset_name: dspace7-installer.zip
           asset_content_type: application/zip
