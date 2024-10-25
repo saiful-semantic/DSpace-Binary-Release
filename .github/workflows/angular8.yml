@@ -29,7 +29,7 @@ jobs:
       working-directory: ./source/dspace-angular-dspace-8.0
 
     - name: Build Angular project
-      run: yarn build
+      run: yarn build:prod
       working-directory: ./source/dspace-angular-dspace-8.0
 
     - name: Zip the dist folder
