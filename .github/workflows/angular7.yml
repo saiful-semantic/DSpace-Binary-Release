@@ -26,14 +26,14 @@ jobs:
 
     - name: Install dependencies
       run: yarn install
-      working-directory: ./source
+      working-directory: ./source/dspace-angular-dspace-7.6.2
 
     - name: Build Angular project
       run: yarn build
-      working-directory: ./source
+      working-directory: ./source/dspace-angular-dspace-7.6.2
 
     - name: Zip the dist folder
-      run: zip -r angular7-dist.zip ./source/dist
+      run: zip -r angular7-dist.zip ./source/dspace-angular-dspace-7.6.2/dist
 
     - name: Create GitHub Release
       uses: ncipollo/release-action@v1
