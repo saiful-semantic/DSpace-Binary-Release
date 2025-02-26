@@ -42,14 +42,14 @@ jobs:
 
   #   steps:
       # Step 5: Upload as a Release Asset
-      - name: Create GitHub Release 8.1
+      - name: Create GitHub Backend Release 8x
         id: create_release_8_1
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: "release_8_1"
-          release_name: "Release 8.1"
+          release_name: "DSpace Backend 8.1"
           draft: false
           prerelease: false
 

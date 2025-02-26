@@ -23,7 +23,7 @@ jobs:
       # Step 2: Download Java source .zip file
       - name: Download Java Source
         run: |
-          curl -L -o source.zip https://github.com/DSpace/DSpace/archive/refs/tags/dspace-7.6.2.zip
+          curl -L -o source.zip https://github.com/DSpace/DSpace/archive/refs/tags/dspace-7.6.3.zip
           unzip source.zip -d ./source
 
       # Step 3: Build with Maven
@@ -35,24 +35,24 @@ jobs:
 
       - name: Build with Maven
         run: |
-          cd source/DSpace-dspace-7.6.2
+          cd source/DSpace-dspace-7.6.3
           mvn --no-transfer-progress clean package
 
       # Step 4: Zip the compiled target directory
       - name: Archive the Build
         run: |
-          cd source/DSpace-dspace-7.6.2/dspace/target
+          cd source/DSpace-dspace-7.6.3/dspace/target
           zip -r dspace7-installer.zip dspace-installer
 
       # Step 5: Upload as a Release Asset
-      - name: Create GitHub Release
-        id: create_release
+      - name: Create GitHub Backend Release 7x
+        id: create_release_763
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: "Release ${{ github.ref_name }}"
+          tag_name: "release_7_6_3"
+          release_name: "DSpace Backend 7.6.3"
           draft: false
           prerelease: false
 
@@ -61,7 +61,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./source/DSpace-dspace-7.6.2/dspace/target/dspace7-installer.zip
+          upload_url: ${{ steps.create_release_763.outputs.upload_url }}
+          asset_path: ./source/DSpace-dspace-7.6.3/dspace/target/dspace7-installer.zip
           asset_name: dspace7-installer.zip
           asset_content_type: application/zip
