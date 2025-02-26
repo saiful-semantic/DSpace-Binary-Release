@@ -53,6 +53,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release_7_6_3.outputs.upload_url }}
-        asset_path: ./angular7-dist.zip
+        asset_path: ./source/dspace-angular-dspace-7.6.3/angular7-dist.zip
         asset_name: angular7-dist.zip
         asset_content_type: application/zip
