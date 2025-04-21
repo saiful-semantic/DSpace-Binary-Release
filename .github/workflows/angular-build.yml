@@ -116,7 +116,8 @@ jobs:
         body: |
           DSpace Angular production build ('dist' folder) for version ${{ github.event.inputs.specific_version }} [using NodeJs ${{ github.event.inputs.node-version }}]
           
-          Note: This is a Release Candidate build from branch dspace-${{ github.event.inputs.specific_version }}
+          ${{ contains(github.event.inputs.specific_version, '-rc') && '
+          Note: This is a Release Candidate build from branch dspace-' || '' }}${{ github.event.inputs.specific_version }}
         draft: false
         prerelease: ${{ contains(github.event.inputs.specific_version, '-rc') }}
 
