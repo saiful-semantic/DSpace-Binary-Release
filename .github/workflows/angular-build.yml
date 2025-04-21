@@ -15,19 +15,12 @@ on:
         description: 'Specific version to build (e.g., 7.6.3, 8.1, 9.0-rc1)'
         required: true
         type: string
-      node-version:
-        description: 'Node.js version (18 for v7, 20 for v8, 22 for v9)'
-        required: true
-        type: choice
-        options:
-          - '18'
-          - '20'
-          - '22'
-        default: '18'
 
 jobs:
   validate-version:
     runs-on: ubuntu-latest
+    outputs:
+      node_version: ${{ steps.set_node.outputs.node_version }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -43,8 +36,8 @@ jobs:
     - name: Make version fetch script executable
       run: chmod +x ./scripts/fetch_dspace_versions.py
 
-    - name: Validate version
-      id: validate
+    - name: Validate version and set Node.js version
+      id: set_node
       run: |
         VERSIONS=$(python3 ./scripts/fetch_dspace_versions.py angular)
         MAJOR_VERSION="${{ github.event.inputs.major_version }}"
@@ -55,17 +48,13 @@ jobs:
           exit 1
         fi
         
-        # Validate Node.js version matches Angular version
-        NODE_VERSION="${{ github.event.inputs.node-version }}"
-        if [ "$MAJOR_VERSION" = "7" ] && [ "$NODE_VERSION" != "18" ]; then
-          echo "::error::Angular 7.x requires Node.js 18"
-          exit 1
-        elif [ "$MAJOR_VERSION" = "8" ] && [ "$NODE_VERSION" != "20" ]; then
-          echo "::error::Angular 8.x requires Node.js 20"
-          exit 1
-        elif [ "$MAJOR_VERSION" = "9" ] && [ "$NODE_VERSION" != "22" ]; then
-          echo "::error::Angular 9.x requires Node.js 22"
-          exit 1
+        # Set Node.js version based on Angular major version
+        if [ "$MAJOR_VERSION" = "7" ]; then
+          echo "node_version=18" >> $GITHUB_OUTPUT
+        elif [ "$MAJOR_VERSION" = "8" ]; then
+          echo "node_version=20" >> $GITHUB_OUTPUT
+        elif [ "$MAJOR_VERSION" = "9" ]; then
+          echo "node_version=22" >> $GITHUB_OUTPUT
         fi
         
         echo "Version $SPECIFIC_VERSION is valid with Node.js $NODE_VERSION"
@@ -94,7 +83,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: ${{ github.event.inputs.node-version }}
+        node-version: ${{ needs.validate-version.outputs.node_version }}
 
     - name: Install Yarn
       run: npm install -g yarn
@@ -114,7 +103,7 @@ jobs:
         tag_name: "angular_${{ github.event.inputs.specific_version }}"
         release_name: "DSpace Angular ${{ github.event.inputs.specific_version }}"
         body: |
-          DSpace Angular production build ('dist' folder) for version ${{ github.event.inputs.specific_version }} [using NodeJs ${{ github.event.inputs.node-version }}]
+          DSpace Angular production build ('dist' folder) for version ${{ github.event.inputs.specific_version }} [using NodeJs ${{ needs.validate-version.outputs.node_version }}]
           
           ${{ contains(github.event.inputs.specific_version, '-rc') && '
           Note: This is a Release Candidate build from branch dspace-' || '' }}${{ github.event.inputs.specific_version }}
