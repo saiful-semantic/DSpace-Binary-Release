@@ -11,8 +11,11 @@ fi
 
 VERSION=$1
 
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
 # Check if release already exists
-./check-release.sh "$VERSION"
+"${SCRIPT_DIR}/check-release.sh" "$VERSION"
 if [ $? -ne 0 ]; then
     exit 1
 fi
