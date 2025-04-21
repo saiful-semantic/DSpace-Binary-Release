@@ -1,0 +1,73 @@
+name: Build and Release DSpace Angular
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'DSpace Angular version (e.g., 7.6.3 or 8.1)'
+        required: true
+        type: string
+      node-version:
+        description: 'Node.js version (18 for Angular 7.x, 20 for Angular 8.x)'
+        required: true
+        type: choice
+        options:
+          - '18'
+          - '20'
+        default: '18'
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check for existing release
+      id: check_release
+      run: |
+        TAG_NAME="angular_${{ github.event.inputs.version }}"
+        RELEASE_EXISTS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME" \
+          | jq -r '.id // empty')
+        if [ ! -z "$RELEASE_EXISTS" ]; then
+          echo "::error::A release for version ${{ github.event.inputs.version }} already exists!"
+          exit 1
+        fi
+        echo "No existing release found for version ${{ github.event.inputs.version }}, proceeding with build..."
+
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ github.event.inputs.node-version }}
+
+    - name: Install Yarn
+      run: npm install -g yarn
+
+    - name: Make script executable
+      run: chmod +x ./scripts/build-dspace-angular.sh
+
+    - name: Build DSpace Angular
+      run: ./scripts/build-dspace-angular.sh ${{ github.event.inputs.version }}
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: "angular_${{ github.event.inputs.version }}"
+        release_name: "DSpace Angular ${{ github.event.inputs.version }}"
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./angular${{ github.event.inputs.version }}-dist.zip
+        asset_name: angular${{ github.event.inputs.version }}-dist.zip
+        asset_content_type: application/zip
