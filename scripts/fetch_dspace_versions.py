@@ -29,11 +29,32 @@ def get_dspace_versions(component):
     
     # Sort versions
     def version_key(v):
-        # Split version into parts
-        parts = v.lower().replace('-rc', '.rc').split('.')
-        # Convert numbers to ints for proper sorting
-        return [int(x) if x.isdigit() else x for x in parts]
-    
+        # Split version into parts and normalize pre-release identifiers
+        v = v.lower().replace('-beta', '.0.beta.').replace('-rc', '.0.rc.').replace('-preview-', '.0.preview.')
+        parts = v.split('.')
+        
+        result = []
+        for part in parts:
+            if part.startswith(('beta', 'rc', 'preview')):
+                # Pre-release versions sort before final releases
+                # Use negative numbers to ensure they sort before release versions
+                prefix = part[:-1] if part[-1].isdigit() else part
+                num = int(part[len(prefix):]) if part[len(prefix):].isdigit() else 0
+                if prefix == 'beta':
+                    result.append((-3, num))
+                elif prefix == 'preview':
+                    result.append((-2, num))
+                elif prefix == 'rc':
+                    result.append((-1, num))
+            else:
+                try:
+                    result.append((0, int(part)))
+                except ValueError:
+                    # Skip any non-numeric parts
+                    continue
+        return result
+
+    # Sort versions using the new key function
     versions.sort(key=version_key)
     
     # Group versions by major version
