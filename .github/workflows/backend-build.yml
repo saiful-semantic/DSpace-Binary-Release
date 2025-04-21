@@ -68,8 +68,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Make build script executable
-      run: chmod +x ./scripts/build-dspace-backend.sh
+    - name: Make build scripts executable
+      run: |
+        chmod +x ./scripts/build-dspace-backend.sh
+        chmod +x ./scripts/check-release.sh
 
     - name: Set up JDK
       uses: actions/setup-java@v3

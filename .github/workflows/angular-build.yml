@@ -88,8 +88,10 @@ jobs:
     - name: Install Yarn
       run: npm install -g yarn
 
-    - name: Make build script executable
-      run: chmod +x ./scripts/build-dspace-angular.sh
+    - name: Make scripts executable
+      run: |
+        chmod +x ./scripts/build-dspace-angular.sh
+        chmod +x ./scripts/check-release.sh
 
     - name: Build DSpace Angular
       run: ./scripts/build-dspace-angular.sh ${{ github.event.inputs.specific_version }}
