@@ -50,4 +50,3 @@ cd dspace/target
 zip -r "../../../dspace${VERSION//./_}-installer.zip" dspace-installer
 
 echo "Build completed successfully!"
-cd ../../..

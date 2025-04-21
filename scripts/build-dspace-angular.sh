@@ -50,7 +50,6 @@ fi
 # Create distribution zip
 echo "Creating distribution package..."
 cd dist
-zip -r "../../angular${VERSION//./_}-dist.zip" .
+zip -r "../angular${VERSION//./_}-dist.zip" .
 
 echo "Build completed successfully!"
-cd ../../..
