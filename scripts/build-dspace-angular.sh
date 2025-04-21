@@ -10,6 +10,7 @@ if [ -z "$1" ]; then
 fi
 
 VERSION=$1
+MAJOR_VERSION="${VERSION%%.*}"
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
@@ -34,10 +35,17 @@ unzip -o source.zip -d ./${SOURCE_DIR}
 # Install dependencies and build
 cd "${SOURCE_DIR}/${ANGULAR_DIR}"
 echo "Installing dependencies..."
-yarn install
-
-echo "Building project..."
-yarn build:prod
+if [ "$MAJOR_VERSION" = "9" ]; then
+    echo "Using npm for DSpace Angular 9.0+"
+    npm ci
+    echo "Building project..."
+    npm run build:prod
+else
+    echo "Using yarn for DSpace Angular < 9.0"
+    yarn install
+    echo "Building project..."
+    yarn build:prod
+fi
 
 # Create distribution zip
 echo "Creating distribution package..."

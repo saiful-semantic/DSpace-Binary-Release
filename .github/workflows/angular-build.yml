@@ -85,8 +85,14 @@ jobs:
       with:
         node-version: ${{ needs.validate-version.outputs.node_version }}
 
-    - name: Install Yarn
-      run: npm install -g yarn
+    - name: Install package manager
+      run: |
+        if [ "${{ github.event.inputs.major_version }}" = "9" ]; then
+          echo "Using npm for DSpace Angular 9.0+"
+        else
+          echo "Installing yarn for DSpace Angular < 9.0"
+          npm install -g yarn
+        fi
 
     - name: Make scripts executable
       run: |
