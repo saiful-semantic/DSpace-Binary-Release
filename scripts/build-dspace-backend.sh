@@ -14,6 +14,15 @@ SOURCE_DIR="source"
 DSPACE_DIR="DSpace-dspace-${VERSION}"
 MAJOR_VERSION="${VERSION%%.*}"
 
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+# Check if release already exists
+"${SCRIPT_DIR}/check-release.sh" "$VERSION" "backend"
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
 # Determine Java version based on DSpace version
 if [ "$MAJOR_VERSION" = "7" ]; then
     JAVA_VERSION="11"
@@ -22,21 +31,6 @@ elif [ "$MAJOR_VERSION" = "8" ] || [ "$MAJOR_VERSION" = "9" ]; then
 else
     echo "Error: Unsupported DSpace version $VERSION"
     exit 1
-fi
-
-# Check if release already exists
-TAG_NAME="backend_${VERSION}"
-REPO_URL="$(git config --get remote.origin.url | sed 's/\.git$//')"
-REPO_PATH="${REPO_URL#*github.com/}"
-
-response=$(curl -s -o /dev/null -w "%{http_code}" "https://api.github.com/repos/${REPO_PATH}/releases/tags/${TAG_NAME}")
-
-if [ "$response" = "200" ]; then
-    echo "Error: A release for version ${VERSION} already exists!"
-    exit 1
-elif [ "$response" != "404" ]; then
-    echo "Error: Failed to check release status (HTTP ${response})"
-    exit 2
 fi
 
 # Create source directory if it doesn't exist

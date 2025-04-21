@@ -105,6 +105,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dspace${{ github.event.inputs.specific_version }}-installer.zip
+        asset_path: ./scripts/source/dspace${{ github.event.inputs.specific_version }}-installer.zip
         asset_name: dspace${{ github.event.inputs.specific_version }}-installer.zip
         asset_content_type: application/zip
