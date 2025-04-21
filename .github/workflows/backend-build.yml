@@ -1,0 +1,108 @@
+name: Build and Release DSpace Backend
+
+on:
+  workflow_dispatch:
+    inputs:
+      major_version:
+        description: 'Major version of DSpace Backend'
+        required: true
+        type: choice
+        options:
+          - '7'
+          - '8'
+          - '9'
+      specific_version:
+        description: 'Specific version to build (e.g., 7.6.3, 8.1, 9.0-rc1)'
+        required: true
+        type: string
+
+jobs:
+  validate-version:
+    runs-on: ubuntu-latest
+    outputs:
+      java_version: ${{ steps.validate.outputs.java_version }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install Python dependencies
+      run: pip install requests
+
+    - name: Make version fetch script executable
+      run: chmod +x ./scripts/fetch_dspace_versions.py
+
+    - name: Validate version
+      id: validate
+      run: |
+        VERSIONS=$(python3 ./scripts/fetch_dspace_versions.py backend)
+        MAJOR_VERSION="${{ github.event.inputs.major_version }}"
+        SPECIFIC_VERSION="${{ github.event.inputs.specific_version }}"
+        
+        if ! echo "$VERSIONS" | jq -e --arg ver "$MAJOR_VERSION" --arg specific "$SPECIFIC_VERSION" '.[$ver] | contains([$specific])' > /dev/null; then
+          echo "::error::Version $SPECIFIC_VERSION is not available in DSpace Backend $MAJOR_VERSION.x releases"
+          exit 1
+        fi
+        
+        # Set Java version based on DSpace version
+        if [ "$MAJOR_VERSION" = "7" ]; then
+          echo "java_version=11" >> $GITHUB_OUTPUT
+        elif [ "$MAJOR_VERSION" = "8" ] || [ "$MAJOR_VERSION" = "9" ]; then
+          echo "java_version=17" >> $GITHUB_OUTPUT
+        else
+          echo "::error::Unsupported DSpace version $MAJOR_VERSION"
+          exit 1
+        fi
+        
+        echo "Version $SPECIFIC_VERSION is valid"
+
+  build:
+    needs: validate-version
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Make build script executable
+      run: chmod +x ./scripts/build-dspace-backend.sh
+
+    - name: Set up JDK
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: ${{ needs.validate-version.outputs.java_version }}
+
+    - name: Build DSpace Backend
+      run: ./scripts/build-dspace-backend.sh ${{ github.event.inputs.specific_version }}
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: "backend_${{ github.event.inputs.specific_version }}"
+        release_name: "DSpace Backend ${{ github.event.inputs.specific_version }}"
+        body: |
+          DSpace Backend installer build for version ${{ github.event.inputs.specific_version }} [using Java ${{ needs.validate-version.outputs.java_version }}]
+          
+          This package contains the compiled backend ('dspace-installer' folder) ready for deployment.
+          ${{ contains(github.event.inputs.specific_version, '-rc') && '
+          Note: This is a Release Candidate build from branch dspace-' || '' }}${{ github.event.inputs.specific_version }}
+        draft: false
+        prerelease: ${{ contains(github.event.inputs.specific_version, '-rc') }}
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dspace${{ github.event.inputs.specific_version }}-installer.zip
+        asset_name: dspace${{ github.event.inputs.specific_version }}-installer.zip
+        asset_content_type: application/zip

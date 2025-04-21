@@ -41,12 +41,12 @@ jobs:
       run: pip install requests
 
     - name: Make version fetch script executable
-      run: chmod +x ./scripts/fetch_versions.py
+      run: chmod +x ./scripts/fetch_dspace_versions.py
 
     - name: Validate version
       id: validate
       run: |
-        VERSIONS=$(python3 ./scripts/fetch_versions.py)
+        VERSIONS=$(python3 ./scripts/fetch_dspace_versions.py angular)
         MAJOR_VERSION="${{ github.event.inputs.major_version }}"
         SPECIFIC_VERSION="${{ github.event.inputs.specific_version }}"
         

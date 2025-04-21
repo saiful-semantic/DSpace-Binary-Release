@@ -23,15 +23,9 @@ ANGULAR_DIR="dspace-angular-dspace-${VERSION}"
 # Create source directory if it doesn't exist
 mkdir -p ${SOURCE_DIR}
 
-# Check if this is an RC version
-if [[ $VERSION == *"-rc"* ]]; then
-    echo "Downloading DSpace Angular ${VERSION} from branch..."
-    curl -L -o source.zip "https://github.com/DSpace/dspace-angular/archive/refs/heads/dspace-${VERSION}.zip"
-else
-    echo "Downloading DSpace Angular ${VERSION} from tag..."
-    curl -L -o source.zip "https://github.com/DSpace/dspace-angular/archive/refs/tags/dspace-${VERSION}.zip"
-fi
-
+# Download source from tag (both regular releases and RCs are tagged)
+echo "Downloading DSpace Angular ${VERSION}..."
+curl -L -o source.zip "https://github.com/DSpace/dspace-angular/archive/refs/tags/dspace-${VERSION}.zip"
 unzip -o source.zip -d ./${SOURCE_DIR}
 
 # Install dependencies and build
