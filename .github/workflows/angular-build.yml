@@ -124,6 +124,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./scripts/source/angular${{ github.event.inputs.specific_version }}-dist.zip
+        asset_path: ./angular${{ github.event.inputs.specific_version }}-dist.zip
         asset_name: angular${{ github.event.inputs.specific_version }}-dist.zip
         asset_content_type: application/zip
