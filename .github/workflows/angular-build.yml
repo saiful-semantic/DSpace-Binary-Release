@@ -3,39 +3,93 @@ name: Build and Release DSpace Angular
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'DSpace Angular version (e.g., 7.6.3 or 8.1)'
+      major_version:
+        description: 'Major version of DSpace Angular'
+        required: true
+        type: choice
+        options:
+          - '7'
+          - '8'
+          - '9'
+      specific_version:
+        description: 'Specific version to build (e.g., 7.6.3, 8.1, 9.0-rc1)'
         required: true
         type: string
       node-version:
-        description: 'Node.js version (18 for Angular 7.x, 20 for Angular 8.x)'
+        description: 'Node.js version (18 for v7, 20 for v8, 22 for v9)'
         required: true
         type: choice
         options:
           - '18'
           - '20'
+          - '22'
         default: '18'
 
 jobs:
-  check-and-build:
+  validate-version:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install Python dependencies
+      run: pip install requests
+
+    - name: Make version fetch script executable
+      run: chmod +x ./scripts/fetch_versions.py
+
+    - name: Validate version
+      id: validate
+      run: |
+        VERSIONS=$(python3 ./scripts/fetch_versions.py)
+        MAJOR_VERSION="${{ github.event.inputs.major_version }}"
+        SPECIFIC_VERSION="${{ github.event.inputs.specific_version }}"
+        
+        if ! echo "$VERSIONS" | jq -e --arg ver "$MAJOR_VERSION" --arg specific "$SPECIFIC_VERSION" '.[$ver] | contains([$specific])' > /dev/null; then
+          echo "::error::Version $SPECIFIC_VERSION is not available in DSpace Angular $MAJOR_VERSION.x releases"
+          exit 1
+        fi
+        
+        # Validate Node.js version matches Angular version
+        NODE_VERSION="${{ github.event.inputs.node-version }}"
+        if [ "$MAJOR_VERSION" = "7" ] && [ "$NODE_VERSION" != "18" ]; then
+          echo "::error::Angular 7.x requires Node.js 18"
+          exit 1
+        elif [ "$MAJOR_VERSION" = "8" ] && [ "$NODE_VERSION" != "20" ]; then
+          echo "::error::Angular 8.x requires Node.js 20"
+          exit 1
+        elif [ "$MAJOR_VERSION" = "9" ] && [ "$NODE_VERSION" != "22" ]; then
+          echo "::error::Angular 9.x requires Node.js 22"
+          exit 1
+        fi
+        
+        echo "Version $SPECIFIC_VERSION is valid with Node.js $NODE_VERSION"
+
+  build:
+    needs: validate-version
     runs-on: ubuntu-latest
     
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
     - name: Check for existing release
       id: check_release
       run: |
-        TAG_NAME="angular_${{ github.event.inputs.version }}"
+        TAG_NAME="angular_${{ github.event.inputs.specific_version }}"
         RELEASE_EXISTS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
           "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME" \
           | jq -r '.id // empty')
         if [ ! -z "$RELEASE_EXISTS" ]; then
-          echo "::error::A release for version ${{ github.event.inputs.version }} already exists!"
+          echo "::error::A release for version ${{ github.event.inputs.specific_version }} already exists!"
           exit 1
         fi
-        echo "No existing release found for version ${{ github.event.inputs.version }}, proceeding with build..."
-
-    - name: Checkout repository
-      uses: actions/checkout@v2
+        echo "No existing release found for version ${{ github.event.inputs.specific_version }}, proceeding with build..."
 
     - name: Set up Node.js
       uses: actions/setup-node@v2
@@ -45,11 +99,11 @@ jobs:
     - name: Install Yarn
       run: npm install -g yarn
 
-    - name: Make script executable
+    - name: Make build script executable
       run: chmod +x ./scripts/build-dspace-angular.sh
 
     - name: Build DSpace Angular
-      run: ./scripts/build-dspace-angular.sh ${{ github.event.inputs.version }}
+      run: ./scripts/build-dspace-angular.sh ${{ github.event.inputs.specific_version }}
 
     - name: Create GitHub Release
       id: create_release
@@ -57,10 +111,14 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: "angular_${{ github.event.inputs.version }}"
-        release_name: "DSpace Angular ${{ github.event.inputs.version }}"
+        tag_name: "angular_${{ github.event.inputs.specific_version }}"
+        release_name: "DSpace Angular ${{ github.event.inputs.specific_version }}"
+        body: |
+          DSpace Angular production build ('dist' folder) for version ${{ github.event.inputs.specific_version }} [using NodeJs ${{ github.event.inputs.node-version }}]
+          
+          Note: This is a Release Candidate build from branch dspace-${{ github.event.inputs.specific_version }}
         draft: false
-        prerelease: false
+        prerelease: ${{ contains(github.event.inputs.specific_version, '-rc') }}
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
@@ -68,6 +126,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./angular${{ github.event.inputs.version }}-dist.zip
-        asset_name: angular${{ github.event.inputs.version }}-dist.zip
+        asset_path: ./angular${{ github.event.inputs.specific_version }}-dist.zip
+        asset_name: angular${{ github.event.inputs.specific_version }}-dist.zip
         asset_content_type: application/zip
