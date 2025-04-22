@@ -97,9 +97,6 @@ jobs:
           echo "note=" >> $GITHUB_OUTPUT
         fi
 
-    - name: Debug -> list files
-      run: ls -lh .
-
     - name: Create GitHub Release
       id: create_release
       uses: actions/create-release@v1
@@ -109,9 +106,9 @@ jobs:
         tag_name: "backend_${{ steps.normalize.outputs.safe_version }}"
         release_name: "DSpace Backend ${{ github.event.inputs.specific_version }}"
         body: |
-          DSpace Backend installer build for version ${{ github.event.inputs.specific_version }} [using JDK ${{ needs.validate-version.outputs.java_version }}]
+          DSpace Backend build for version ${{ github.event.inputs.specific_version }} [using JDK ${{ needs.validate-version.outputs.java_version }}]
           
-          This package contains the compiled backend ('dspace-installer' folder) ready for deployment.
+          This is the 'dspace/target/dspace-installer' folder after running 'mvn package'. Ready for install/update using ant.
           
           ${{ steps.note.outputs.note }}
         draft: false

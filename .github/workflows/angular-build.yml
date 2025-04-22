@@ -108,8 +108,14 @@ jobs:
         SAFE_VERSION=$(echo "${{ github.event.inputs.specific_version }}" | sed 's/[^a-zA-Z0-9]/_/g')
         echo "safe_version=$SAFE_VERSION" >> $GITHUB_OUTPUT
 
-    - name: Debug -> list files
-      run: ls -lh ./source
+    - name: Set release note
+      id: note
+      run: |
+        if [[ "${{ github.event.inputs.specific_version }}" == *-rc* ]]; then
+          echo "note=Note: This is a Release Candidate build from branch dspace-${{ github.event.inputs.specific_version }}" >> $GITHUB_OUTPUT
+        else
+          echo "note=" >> $GITHUB_OUTPUT
+        fi
 
     - name: Create GitHub Release
       id: create_release
@@ -122,8 +128,7 @@ jobs:
         body: |
           DSpace Angular production build ('dist' folder) for version ${{ github.event.inputs.specific_version }} [using NodeJs ${{ needs.validate-version.outputs.node_version }}]
           
-          ${{ contains(github.event.inputs.specific_version, '-rc') && '
-          Note: This is a Release Candidate build from branch dspace-' || '' }}${{ github.event.inputs.specific_version }}
+          ${{ steps.note.outputs.note }}
         draft: false
         prerelease: ${{ contains(github.event.inputs.specific_version, '-rc') }}
 

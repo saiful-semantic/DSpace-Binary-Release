@@ -50,7 +50,7 @@ fi
 # Create distribution zip
 echo "Creating distribution package..."
 SAFE_VERSION=$(echo "$VERSION" | sed 's/[^a-zA-Z0-9]/_/g')
-zip -r "../angular${SAFE_VERSION}-dist.zip" .
+zip -r "../angular${SAFE_VERSION}-dist.zip" ./dist
 
 echo "Created ZIP at: $(realpath "../angular${SAFE_VERSION}-dist.zip")"
 
