@@ -109,7 +109,7 @@ jobs:
         tag_name: "backend_${{ steps.normalize.outputs.safe_version }}"
         release_name: "DSpace Backend ${{ github.event.inputs.specific_version }}"
         body: |
-          DSpace Backend installer build for version ${{ github.event.inputs.specific_version }} [using Java ${{ needs.validate-version.outputs.java_version }}]
+          DSpace Backend installer build for version ${{ github.event.inputs.specific_version }} [using JDK ${{ needs.validate-version.outputs.java_version }}]
           
           This package contains the compiled backend ('dspace-installer' folder) ready for deployment.
           
