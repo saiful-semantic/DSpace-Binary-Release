@@ -8,7 +8,8 @@
 	"features": {
 		"ghcr.io/devcontainers/features/java:1": {},
 		"ghcr.io/devcontainers/features/python:1": {},
-		"ghcr.io/devcontainers-extra/features/maven-sdkman:2": {}
+		"ghcr.io/devcontainers-extra/features/maven-sdkman:2": {},
+		"ghcr.io/devcontainers/features/node:1": {}
 	}
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.

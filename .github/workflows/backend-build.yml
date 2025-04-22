@@ -97,7 +97,7 @@ jobs:
           echo "note=" >> $GITHUB_OUTPUT
         fi
 
-    - name: Debug -> list files in scripts/source
+    - name: Debug -> list files
       run: ls -lh .
 
     - name: Create GitHub Release

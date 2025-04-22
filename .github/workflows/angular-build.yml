@@ -108,6 +108,9 @@ jobs:
         SAFE_VERSION=$(echo "${{ github.event.inputs.specific_version }}" | sed 's/[^a-zA-Z0-9]/_/g')
         echo "safe_version=$SAFE_VERSION" >> $GITHUB_OUTPUT
 
+    - name: Debug -> list files
+      run: ls -lh .
+
     - name: Create GitHub Release
       id: create_release
       uses: actions/create-release@v1
