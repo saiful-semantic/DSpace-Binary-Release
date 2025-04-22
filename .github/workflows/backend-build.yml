@@ -98,7 +98,7 @@ jobs:
         fi
 
     - name: Debug -> list files in scripts/source
-      run: ls -lh ./scripts/source
+      run: ls -lh .
 
     - name: Create GitHub Release
       id: create_release
@@ -124,6 +124,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./scripts/source/dspace${{ steps.normalize.outputs.safe_version }}-installer.zip
+        asset_path: ./source/dspace${{ steps.normalize.outputs.safe_version }}-installer.zip
         asset_name: dspace${{ steps.normalize.outputs.safe_version }}-installer.zip
         asset_content_type: application/zip
