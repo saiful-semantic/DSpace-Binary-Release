@@ -47,6 +47,7 @@ mvn --no-transfer-progress clean package
 
 # Create installer zip
 cd dspace/target
-zip -r "../../../dspace${VERSION//./_}-installer.zip" dspace-installer
+SAFE_VERSION=$(echo "$VERSION" | sed 's/[^a-zA-Z0-9]/_/g')
+zip -r "../../../dspace${SAFE_VERSION}-installer.zip" dspace-installer
 
 echo "Build completed successfully!"

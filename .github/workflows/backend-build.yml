@@ -82,29 +82,45 @@ jobs:
     - name: Build DSpace Backend
       run: ./scripts/build-dspace-backend.sh ${{ github.event.inputs.specific_version }}
 
+    - name: Normalize version string for asset path
+      id: normalize
+      run: |
+        NORMALIZED=$(echo "${{ github.event.inputs.specific_version }}" | sed 's/\./_/g')
+        echo "normalized_version=$NORMALIZED" >> $GITHUB_OUTPUT
+
+    - name: Set release note
+      id: note
+      run: |
+        if [[ "${{ github.event.inputs.specific_version }}" == *-rc* ]]; then
+          echo "note=Note: This is a Release Candidate build from branch dspace-${{ github.event.inputs.specific_version }}" >> $GITHUB_OUTPUT
+        else
+          echo "note=" >> $GITHUB_OUTPUT
+        fi
+
     - name: Create GitHub Release
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: "backend_${{ github.event.inputs.specific_version }}"
+        tag_name: "backend_${{ steps.normalize.outputs.normalized_version }}"
         release_name: "DSpace Backend ${{ github.event.inputs.specific_version }}"
         body: |
           DSpace Backend installer build for version ${{ github.event.inputs.specific_version }} [using Java ${{ needs.validate-version.outputs.java_version }}]
           
           This package contains the compiled backend ('dspace-installer' folder) ready for deployment.
-          ${{ contains(github.event.inputs.specific_version, '-rc') && '
-          Note: This is a Release Candidate build from branch dspace-' || '' }}${{ github.event.inputs.specific_version }}
+          
+          ${{ steps.note.outputs.note }}
         draft: false
         prerelease: ${{ contains(github.event.inputs.specific_version, '-rc') }}
 
+            
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./scripts/source/dspace${{ github.event.inputs.specific_version }}-installer.zip
-        asset_name: dspace${{ github.event.inputs.specific_version }}-installer.zip
+        asset_path: ./scripts/source/dspace${{ steps.normalize.outputs.normalized_version }}-installer.zip
+        asset_name: dspace${{ steps.normalize.outputs.normalized_version }}-installer.zip
         asset_content_type: application/zip
