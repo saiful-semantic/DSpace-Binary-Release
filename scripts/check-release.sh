@@ -18,7 +18,8 @@ if [ "$TYPE" != "angular" ] && [ "$TYPE" != "backend" ]; then
     exit 1
 fi
 
-TAG_NAME="${TYPE}_${VERSION}"
+SAFE_VERSION=$(echo "$VERSION" | sed 's/[^a-zA-Z0-9]/_/g')
+TAG_NAME="${TYPE}_${SAFE_VERSION}"
 REPO_URL="$(git config --get remote.origin.url | sed 's/\.git$//')"
 REPO_PATH="${REPO_URL#*github.com/}"
 
