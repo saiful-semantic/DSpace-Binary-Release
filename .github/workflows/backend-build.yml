@@ -97,6 +97,9 @@ jobs:
           echo "note=" >> $GITHUB_OUTPUT
         fi
 
+    - name: Debug -> list files in scripts/source
+      run: ls -lh ./scripts/source
+
     - name: Create GitHub Release
       id: create_release
       uses: actions/create-release@v1

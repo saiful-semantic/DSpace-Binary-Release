@@ -3,6 +3,8 @@
 # Usage: ./build-dspace-backend.sh <version>
 # Example: ./build-dspace-backend.sh 7.6.3 or 9.0-rc1
 
+set -euo pipefail
+
 if [ -z "$1" ]; then
     echo "Error: Version number is required"
     echo "Usage: ./build-dspace-backend.sh <version>"
@@ -49,5 +51,7 @@ mvn --no-transfer-progress clean package
 cd dspace/target
 SAFE_VERSION=$(echo "$VERSION" | sed 's/[^a-zA-Z0-9]/_/g')
 zip -r "../../../dspace${SAFE_VERSION}-installer.zip" dspace-installer
+
+echo "Created ZIP at: $(realpath "../../../dspace${SAFE_VERSION}-installer.zip")"
 
 echo "Build completed successfully!"
