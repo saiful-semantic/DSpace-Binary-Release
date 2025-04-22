@@ -82,11 +82,11 @@ jobs:
     - name: Build DSpace Backend
       run: ./scripts/build-dspace-backend.sh ${{ github.event.inputs.specific_version }}
 
-    - name: Normalize version string for asset path
+    - name: Normalize version string
       id: normalize
       run: |
-        NORMALIZED=$(echo "${{ github.event.inputs.specific_version }}" | sed 's/\./_/g')
-        echo "normalized_version=$NORMALIZED" >> $GITHUB_OUTPUT
+        SAFE_VERSION=$(echo "${{ github.event.inputs.specific_version }}" | sed 's/[^a-zA-Z0-9]/_/g')
+        echo "safe_version=$SAFE_VERSION" >> $GITHUB_OUTPUT
 
     - name: Set release note
       id: note
@@ -103,7 +103,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: "backend_${{ steps.normalize.outputs.normalized_version }}"
+        tag_name: "backend_${{ steps.normalize.outputs.safe_version }}"
         release_name: "DSpace Backend ${{ github.event.inputs.specific_version }}"
         body: |
           DSpace Backend installer build for version ${{ github.event.inputs.specific_version }} [using Java ${{ needs.validate-version.outputs.java_version }}]
@@ -121,6 +121,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./scripts/source/dspace${{ steps.normalize.outputs.normalized_version }}-installer.zip
-        asset_name: dspace${{ steps.normalize.outputs.normalized_version }}-installer.zip
+        asset_path: ./scripts/source/dspace${{ steps.normalize.outputs.safe_version }}-installer.zip
+        asset_name: dspace${{ steps.normalize.outputs.safe_version }}-installer.zip
         asset_content_type: application/zip

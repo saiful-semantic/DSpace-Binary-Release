@@ -102,13 +102,19 @@ jobs:
     - name: Build DSpace Angular
       run: ./scripts/build-dspace-angular.sh ${{ github.event.inputs.specific_version }}
 
+    - name: Normalize version string
+      id: normalize
+      run: |
+        SAFE_VERSION=$(echo "${{ github.event.inputs.specific_version }}" | sed 's/[^a-zA-Z0-9]/_/g')
+        echo "safe_version=$SAFE_VERSION" >> $GITHUB_OUTPUT
+
     - name: Create GitHub Release
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: "angular_${{ github.event.inputs.specific_version }}"
+        tag_name: "angular_${{ steps.normalize.outputs.safe_version }}"
         release_name: "DSpace Angular ${{ github.event.inputs.specific_version }}"
         body: |
           DSpace Angular production build ('dist' folder) for version ${{ github.event.inputs.specific_version }} [using NodeJs ${{ needs.validate-version.outputs.node_version }}]
@@ -124,6 +130,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./angular${{ github.event.inputs.specific_version }}-dist.zip
-        asset_name: angular${{ github.event.inputs.specific_version }}-dist.zip
+        asset_path: ./angular${{ steps.normalize.outputs.safe_version }}-dist.zip
+        asset_name: angular${{ steps.normalize.outputs.safe_version }}-dist.zip
         asset_content_type: application/zip
