@@ -23,29 +23,88 @@ This repository contains GitHub Actions workflows to automatically build both va
 - Backend builds verify Java version compatibility (Java 11 for 7.x, Java 17 for 8.x/9.x)
 - Frontend builds enforce Node.js version requirements (18.x for 7.x, 20.x for 8.x, 22.x for 9.x)
 
-### How to Use the Backend Build:
+## How to Use the Backend Build
 
 Follow the instruction in the [installation manual](https://wiki.lyrasis.org/display/DSDOC8x/Installing+DSpace) for the specific release.
 
-1. Install Dependencies (JDK, PostgreSQL, Solr, etc.)
-2. Create database user, database, enable pgcrypto
-3. Unzip the build `dspace[VERSION]-installer.zip`
-4. Update the configuration:
-```bash
-cp dspace-installer/config/local{.example,}.cfg
-vi dspace-installer/config/local.cfg
-```
-Update `dspace.dir` and db settings at the minimum.
+### Install Dependencies (JDK, PostgreSQL, Solr, etc.)
 
-5. Deploy the build:
 ```bash
+sudo apt update
+sudo apt install openjdk-17-jdk ant postgresql
+```
+
+> **Note:** The `postgresql-contrib` package is required for the `pgcrypto` extension, only if PostgreSQL 13 or below is installed.
+
+### Create app user, database user, database, enable pgcrypto
+
+```bash
+sudo adduser dspace
+sudo -u postgres psql -c "CREATE USER dspace WITH PASSWORD 'strongPassword' CREATEDB;"
+sudo -u postgres createdb --owner=dspace --encoding=UTF8 dspace
+sudo -u postgres psql -c "CREATE EXTENSION pgcrypto;"
+```
+
+### Download and Unzip the Backend Build
+
+**Switch to the app user:**
+```bash
+sudo su - dspace
+```
+
+**Download and unzip the required version:**
+```bash
+export VERSION=9_2
+wget https://github.com/saiful-semantic/DSpace-Binary-Release/releases/download/backend_${VERSION}/dspace${VERSION}-installer.zip
+unzip dspace${VERSION}-installer.zip
 cd dspace-installer
+```
+
+**Update the configuration:**
+```bash
+cp config/local.cfg{.EXAMPLE,}
+vi config/local.cfg
+```
+> **Important:** Update `dspace.dir` and `db.*` settings at the minimum.
+
+**Deploy the build and migrate database:**
+```bash
 ant fresh_install
+cd [dspace.dir]
+bin/dspace database migrate
+bin/dspace database info
 ``` 
 
-Follow the rest of the instructions to configure Solr, Postgres, Tomcat, etc.
+### Configure Solr
 
-### How to Use the Frontend Build:
+Copy or symlink the solr folder from the build to the dspace.dir:
+
+```bash
+ln -s [dspace.dir]/solr/* [solr.dir]/configsets/
+# Restart Solr
+```
+
+### Start the Backend with Embedded Tomcat
+
+```bash
+java -Ddspace.dir=[dspace.dir] -Dlogging.config=[dspace.dir]/config/log4j2.xml -jar [dspace.dir]/server-boot.jar
+```
+
+### Use Systemd to manage the backend
+
+_**TODO**_
+
+### Troubleshooting
+
+- Look for clues in `[dspace.dir]/logs` and `[solr.dir]/logs`
+- Check if the database is running and accessible
+- Check if the solr server is running and accessible
+
+## How to Use the Frontend Build
+
+**THIS IS NOT FOR PRODUCTION**
+
+This step is only for quick testing, to check if backend is working as expected. In production, the UI will need to be customized with a custom theme, at least for the landing page and the logo. After those changes the frontend should be built again.
 
 Follow the same [installation manual](https://wiki.lyrasis.org/display/DSDOC8x/Installing+DSpace).
 
