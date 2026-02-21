@@ -108,13 +108,99 @@ This step is only for quick testing, to check if backend is working as expected.
 
 Follow the same [installation manual](https://wiki.lyrasis.org/display/DSDOC8x/Installing+DSpace).
 
-1. Install dependencies (Node.js, Yarn, PM2, etc.)
-1. Unzip the build `angular[VERSION]-dist.zip` into the frontend folder:
+### Install dependencies (Node.js, Yarn, PM2, etc.)
+
 ```bash
-mkdir ~/frontend/config
-cd ~/frontend
-unzip angular[VERSION]-dist.zip
-vi config/config.prod.yml
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
+# Re-login and install 22.x for DSpace 9.x (no Yarn for 9.x)
+nvm install 22
+npm install -g pm2
 ```
 
-Follow the rest of the instructions to run using yarn or pm2.
+### Download and unzip the frontend build:
+
+```bash
+cd ~/download
+export VERSION=9_2
+wget https://github.com/saiful-semantic/DSpace-Binary-Release/releases/download/angular_${VERSION}/angular${VERSION}-dist.zip
+mkdir -p ~/frontend/config
+cd ~/frontend
+unzip ~/download/angular${VERSION}-dist.zip
+# It will extract the `dist` folder into ~/frontend/dist
+tee config/config.prod.yml > /dev/null <<EOF
+# Frontend
+ui:
+  ssl: false
+  host: localhost
+  port: 4000
+  nameSpace: /
+
+# Backend
+rest:
+  ssl: false
+  host: localhost
+  port: 8080
+  nameSpace: /server
+EOF
+```
+
+### Test Run
+
+```bash
+cd ~/frontend
+node ./dist/server/main.js
+```
+
+## Reverse Proxy Using Caddy
+
+>Reverse proxy setup is optional. If you are accessing DSpace from a different machine, you will need to set up a reverse proxy. Otherwise, you can skip this step.
+
+If already have Apache or Nginx, you may configure a new site/VirtualHost as per official documentation. On a fresh machine, Caddy is much easier to configure.
+
+Here's a sample Caddyfile for reverse proxying DSpace backend and frontend:
+
+```bash
+# Install Caddy, if not already installed
+sudo apt install caddy
+
+# This will replace the existing Caddyfile
+sudo tee /etc/caddy/Caddyfile > /dev/null <<EOF
+http://ip_address {
+    handle /server/* {
+        reverse_proxy 127.0.0.1:8080
+    }
+
+    handle {
+        reverse_proxy localhost:4000
+    }
+}
+EOF
+
+sudo systemctl reload caddy
+```
+
+### For automatic HTTPS with Let's Encrypt
+
+For this to work, you need to have a Fully Qualified Domain Name (FQDN) pointing to your server.
+
+```bash
+sudo tee /etc/caddy/Caddyfile > /dev/null <<EOF
+repository.university.edu {
+    handle /server/* {
+        reverse_proxy 127.0.0.1:8080 {
+            header_up X-Forwarded-Proto https
+        }
+    }
+
+    handle {
+        reverse_proxy localhost:4000
+    }
+}
+EOF
+
+sudo systemctl reload caddy
+```
+
+> Caddy will automatically obtain and renew Let's Encrypt certificates. It does not require tools like certbot.
+
+The above configuration will obviously require appropriate `dspace.server.url` and `dspace.ui.url` setting in `[dspace.dir]/config/local.cfg` as well as in the frontend configuration (`~/frontend/config/config.prod.yml`).
