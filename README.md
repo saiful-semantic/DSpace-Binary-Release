@@ -92,7 +92,64 @@ java -Ddspace.dir=[dspace.dir] -Dlogging.config=[dspace.dir]/config/log4j2.xml -
 
 ### Use Systemd to manage the backend
 
-_**TODO**_
+Create `/etc/dspace/dspace.env` and add the following:
+
+```bash
+DSPACE_DIR=/home/dspace/backend
+LOGGING_CONFIG=/home/dspace/backend/config/log4j2.xml
+SERVER_PORT=8080
+JAVA_OPTS="-Xms2g -Xmx4g -XX:+UseG1GC"
+```
+
+Edit `/etc/systemd/system/dspace.service` and add the following:
+
+```systemd
+[Unit]
+Description=DSpace Spring Boot Backend
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=dspace
+Group=dspace
+
+EnvironmentFile=/etc/dspace/dspace.env
+
+WorkingDirectory=${DSPACE_DIR}
+
+ExecStart=/usr/bin/java $JAVA_OPTS \
+  -Ddspace.dir=${DSPACE_DIR} \
+  -Dlogging.config=${LOGGING_CONFIG} \
+  -Dserver.port=${SERVER_PORT} \
+  -jar ${DSPACE_DIR}/webapps/server-boot.jar
+
+Restart=on-failure
+RestartSec=10
+
+LimitNOFILE=65536
+TimeoutStopSec=60
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**Reload and enable the service:**
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable dspace
+sudo systemctl start dspace
+```
+
+**Check the status:**
+```bash
+sudo systemctl status dspace
+journalctl -u dspace -f
+```
 
 ### Troubleshooting
 
