@@ -114,13 +114,13 @@ sudo chown -R solr:solr /var/solr/data/
 sudo systemctl restart solr
 ```
 
-### Start the Backend with Embedded Tomcat
+### Test the backend with embedded Tomcat
 
 ```bash
 java -Ddspace.dir=[dspace.dir] -Dlogging.config=[dspace.dir]/config/log4j2.xml -jar [dspace.dir]/server-boot.jar
 ```
 
-### Use Systemd to manage the backend
+### Use `systemd` to run the backend in production
 
 Create `/etc/dspace/dspace.env` and add the following (assuming backend is installed at `/home/dspace/backend`):
 
@@ -144,8 +144,6 @@ User=dspace
 Group=dspace
 
 EnvironmentFile=/etc/dspace/dspace.env
-
-WorkingDirectory=${DSPACE_DIR}
 
 ExecStart=/usr/bin/java $JAVA_OPTS \
   -Ddspace.dir=${DSPACE_DIR} \
@@ -183,7 +181,7 @@ journalctl -u dspace -f
 
 ### Troubleshooting
 
-- Look for clues in `[dspace.dir]/logs` and `/var/solr/logs`
+- Look for clues in `[dspace.dir]/logs/dspace.log` and `/var/solr/logs/solr.log`
 - Check if the database is running and accessible
 - Check if the solr server is running and accessible
 
