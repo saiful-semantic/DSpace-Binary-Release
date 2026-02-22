@@ -16,16 +16,11 @@ DSpace consists of both a Java-based backend and an Angular-based frontend.
 * [Backend](https://github.com/DSpace/DSpace) provides a [REST API](https://github.com/DSpace/RestContract), along with other machine-based interfaces (e.g. OAI-PMH, SWORD, etc).
 * [Frontend](https://github.com/DSpace/dspace-angular/) is the User Interface built on the REST API.
 
-## Using the Automated Builds
-
-This repository contains GitHub Actions workflows to automatically build both vanilla DSpace Backend and Frontend (Angular UI) components. The build workflows automatically validate that the correct versions of dependencies are used:
-
-- Backend builds verify Java version compatibility (Java 11 for 7.x, Java 17 for 8.x/9.x)
-- Frontend builds enforce Node.js version requirements (18.x for 7.x, 20.x for 8.x, 22.x for 9.x)
+This repository contains binary releases of vanilla DSpace Backend and Frontend (Angular UI) components.
 
 ## How to Use the Backend Build
 
-Follow the instruction in the [installation manual](https://wiki.lyrasis.org/display/DSDOC8x/Installing+DSpace) for the specific release.
+Follow the instruction in the [installation manual](https://wiki.lyrasis.org/display/DSDOC9x/Installing+DSpace) for the specific release for more details.
 
 ### Install Dependencies (JDK, PostgreSQL, Solr, etc.)
 
@@ -54,6 +49,8 @@ sudo su - dspace
 
 **Download and unzip the required version:**
 ```bash
+mkdir ~/download
+cd ~/download
 export VERSION=9_2
 wget https://github.com/saiful-semantic/DSpace-Binary-Release/releases/download/backend_${VERSION}/dspace${VERSION}-installer.zip
 unzip dspace${VERSION}-installer.zip
@@ -92,7 +89,7 @@ java -Ddspace.dir=[dspace.dir] -Dlogging.config=[dspace.dir]/config/log4j2.xml -
 
 ### Use Systemd to manage the backend
 
-Create `/etc/dspace/dspace.env` and add the following:
+Create `/etc/dspace/dspace.env` and add the following (assuming backend is installed at `/home/dspace/backend`):
 
 ```bash
 DSPACE_DIR=/home/dspace/backend
@@ -163,15 +160,17 @@ journalctl -u dspace -f
 
 This step is only for quick testing, to check if backend is working as expected. In production, the UI will need to be customized with a custom theme, at least for the landing page and the logo. After those changes the frontend should be built again.
 
-Follow the same [installation manual](https://wiki.lyrasis.org/display/DSDOC8x/Installing+DSpace).
+Follow the official [installation manual](https://wiki.lyrasis.org/display/DSDOC9x/Installing+DSpace#InstallingDSpace-InstallingtheFrontend(UserInterface)) for more details.
 
-### Install dependencies (Node.js, Yarn, PM2, etc.)
+### Install NodeJs using Node Version Manager (NVM)
 
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
-# Re-login and install 22.x for DSpace 9.x (no Yarn for 9.x)
+```
+
+**Re-login to the terminal and install required node version:**
+```bash
 nvm install 22
-npm install -g pm2
 ```
 
 ### Download and unzip the frontend build:
@@ -183,8 +182,12 @@ wget https://github.com/saiful-semantic/DSpace-Binary-Release/releases/download/
 mkdir -p ~/frontend/config
 cd ~/frontend
 unzip ~/download/angular${VERSION}-dist.zip
-# It will extract the `dist` folder into ~/frontend/dist
-tee config/config.prod.yml > /dev/null <<EOF
+```
+> The above commands will extract the `dist` folder into `~/frontend/dist` folder.
+
+Create `config/config.prod.yml` and add the following:    
+
+```yaml
 # Frontend
 ui:
   ssl: false
@@ -198,7 +201,6 @@ rest:
   host: localhost
   port: 8080
   nameSpace: /server
-EOF
 ```
 
 ### Test Run
@@ -208,21 +210,24 @@ cd ~/frontend
 node ./dist/server/main.js
 ```
 
+> Production deployment will use tools like `pm2` or `systemd` to manage the lifecycle of the frontend server. Refer to the official documentation for more information.
+
 ## Reverse Proxy Using Caddy
 
 >Reverse proxy setup is optional. If you are accessing DSpace from a different machine, you will need to set up a reverse proxy. Otherwise, you can skip this step.
 
-If already have Apache or Nginx, you may configure a new site/VirtualHost as per official documentation. On a fresh machine, Caddy is much easier to configure.
+If you already have Apache or Nginx installed, you may configure a new site/VirtualHost as per official documentation. However, on a fresh machine, Caddy is much easier to configure.
 
-Here's a sample Caddyfile for reverse proxying DSpace backend and frontend:
+**Install Caddy, if not already installed:**
 
 ```bash
-# Install Caddy, if not already installed
 sudo apt install caddy
+```
 
-# This will replace the existing Caddyfile
-sudo tee /etc/caddy/Caddyfile > /dev/null <<EOF
-http://ip_address {
+**Edit `/etc/caddy/Caddyfile` and add the following for local testing (non-SSL):**
+
+```caddy
+http://[IP_ADDRESS] {
     handle /server/* {
         reverse_proxy 127.0.0.1:8080
     }
@@ -231,17 +236,19 @@ http://ip_address {
         reverse_proxy localhost:4000
     }
 }
-EOF
+```
 
+**Reload Caddy:**
+
+```bash
 sudo systemctl reload caddy
 ```
 
-### For automatic HTTPS with Let's Encrypt
+### For automatic HTTPS with Let's Encrypt (SSL)
 
-For this to work, you need to have a Fully Qualified Domain Name (FQDN) pointing to your server.
+For this to work, you need to have a Fully Qualified Domain Name (FQDN) or a domain name pointing to your server. Here is a working example for `repository.university.edu`:
 
-```bash
-sudo tee /etc/caddy/Caddyfile > /dev/null <<EOF
+```caddy
 repository.university.edu {
     handle /server/* {
         reverse_proxy 127.0.0.1:8080 {
@@ -253,11 +260,8 @@ repository.university.edu {
         reverse_proxy localhost:4000
     }
 }
-EOF
-
-sudo systemctl reload caddy
 ```
 
-> Caddy will automatically obtain and renew Let's Encrypt certificates. It does not require tools like certbot.
+> **Note:** Caddy will automatically obtain and renew Let's Encrypt certificates. It does not require tools like `certbot`.
 
 The above configuration will obviously require appropriate `dspace.server.url` and `dspace.ui.url` setting in `[dspace.dir]/config/local.cfg` as well as in the frontend configuration (`~/frontend/config/config.prod.yml`).
