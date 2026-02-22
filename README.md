@@ -128,7 +128,7 @@ Create `/etc/dspace/dspace.env` and add the following (assuming backend is insta
 DSPACE_DIR=/home/dspace/backend
 LOGGING_CONFIG=/home/dspace/backend/config/log4j2.xml
 SERVER_PORT=8080
-JAVA_OPTS="-Xms2g -Xmx4g -XX:+UseG1GC"
+JAVA_OPTS="-Xms512m -Xmx1g -XX:+UseG1GC"
 ```
 
 Edit `/etc/systemd/system/dspace.service` and add the following:
