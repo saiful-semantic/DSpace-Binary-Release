@@ -35,7 +35,7 @@ sudo apt install openjdk-17-jdk ant postgresql
 
 ```bash
 cd /tmp
-wget https://www.apache.org -O solr-9.10.1.tgz
+wget https://www.apache.org/dyn/closer.lua/solr/solr/9.10.1/solr-9.10.1.tgz?action=download -O solr-9.10.1.tgz
 tar xzf solr-9.10.1.tgz solr-9.10.1/bin/install_solr_service.sh --strip-components=2
 sudo bash ./install_solr_service.sh solr-9.10.1.tgz
 ```
