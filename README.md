@@ -31,6 +31,38 @@ sudo apt install openjdk-17-jdk ant postgresql
 
 > **Note:** The `postgresql-contrib` package is required for the `pgcrypto` extension, only if PostgreSQL 13 or below is installed.
 
+**Solr 9.x Installation:**
+
+```bash
+cd /tmp
+wget https://www.apache.org -O solr-9.10.1.tgz
+tar xzf solr-9.10.1.tgz solr-9.10.1/bin/install_solr_service.sh --strip-components=2
+sudo bash ./install_solr_service.sh solr-9.10.1.tgz
+```
+
+> It will install Solr binaries and libraries into `/opt/solr` directory and data into `/var/solr/data` directory.
+
+**Solr 9.x Configuration:**
+
+Edit `/etc/default/solr.in.sh` and add the following:
+
+```bash
+SOLR_OPTS="$SOLR_OPTS -Dsolr.config.lib.enabled=true -Djava.security.manager=allow"
+```
+
+**Set resource limits for Solr:**
+
+```bash
+printf "solr hard nofile 65535\nsolr soft nofile 65535\nsolr hard nproc 65535\nsolr soft nproc 65535\n" | sudo tee /etc/security/limits.d/solr.conf > /dev/null
+```
+
+**Enable and start Solr:**
+
+```bash
+sudo systemctl start solr
+sudo systemctl enable solr
+```
+
 ### Create app user, database user, database, enable pgcrypto
 
 ```bash
@@ -72,13 +104,14 @@ bin/dspace database migrate
 bin/dspace database info
 ``` 
 
-### Configure Solr
+### Configure Solr Cores
 
-Copy or symlink the solr folder from the build to the dspace.dir:
+Copy Solr cores from `[dspace.dir]/solr` into Solr data directory:
 
 ```bash
-ln -s [dspace.dir]/solr/* [solr.dir]/configsets/
-# Restart Solr
+cp -r [dspace.dir]/solr/* /var/solr/data/
+sudo chown -R solr:solr /var/solr/data/
+sudo systemctl restart solr
 ```
 
 ### Start the Backend with Embedded Tomcat
@@ -150,7 +183,7 @@ journalctl -u dspace -f
 
 ### Troubleshooting
 
-- Look for clues in `[dspace.dir]/logs` and `[solr.dir]/logs`
+- Look for clues in `[dspace.dir]/logs` and `/var/solr/logs`
 - Check if the database is running and accessible
 - Check if the solr server is running and accessible
 
