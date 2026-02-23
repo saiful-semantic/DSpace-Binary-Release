@@ -200,10 +200,7 @@ Follow the official [installation manual](https://wiki.lyrasis.org/display/DSDOC
 
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
-```
-
-**Re-login to the terminal and install required node version:**
-```bash
+\. "$HOME/.nvm/nvm.sh"
 nvm install 22
 ```
 
