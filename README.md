@@ -284,15 +284,21 @@ pm2 start ~/frontend/app.json
 pm2 save
 ```
 
-Now the Angular frontend service will start automatically during boot. You can check the status of the service by running `pm2 list`.
+You can check the status of the service by running `pm2 list`. Use a `crontab` entry to restart the service during boot.
 
-Add this line in the `crontab` to restart the service automatically during boot:
+First, get the complete path of `pm2` with this command:
 
 ```bash
-@reboot pm2 resurrect
+which pm2
 ```
 
-> **Note:** Refer to this [documentation](https://pm2.keymetrics.io/docs/usage/startup/) for more strategies to manage the `pm2` service.
+Then, add the following line to your `crontab` with complete path of `pm2`. For example:
+
+```bash
+@reboot /home/dspace/.nvm/versions/node/v22.22.1/bin/pm2 resurrect
+```
+
+> **Note:** Refer to this [documentation](https://pm2.keymetrics.io/docs/usage/startup/) for more strategies to manage the `pm2` service, such as `pm2` with `systemd` service.
 
 ## Reverse Proxy Using Caddy
 
