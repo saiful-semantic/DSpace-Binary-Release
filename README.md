@@ -120,6 +120,9 @@ sudo systemctl restart solr
 java -Ddspace.dir=[dspace.dir] -Dlogging.config=[dspace.dir]/config/log4j2.xml -jar [dspace.dir]/server-boot.jar
 ```
 
+If there are no errors, you can access the backend at:
+http://localhost:8080/server/ or `http://[IP_ADDRESS]:8080`
+
 ### Use `systemd` to run the backend in production
 
 Create `/etc/dspace/dspace.env` and add the following (assuming backend is installed at `/home/dspace/backend`):
@@ -234,6 +237,10 @@ rest:
   nameSpace: /server
 ```
 
+> **Note:** If you are running this on a VM or a remote machine, replace `localhost` with the IP address or the domain name of that machine.
+
+> **Important:** If the host is changed above, the same host IP/domain name must be updated in the `config/local.cfg` in `dspace.server.url` and `dspace.ui.url` accordingly and backend service restarted.
+
 ### Test Run
 
 ```bash
@@ -241,7 +248,54 @@ cd ~/frontend
 node ./dist/server/main.js
 ```
 
-> Production deployment will use tools like `pm2` or `systemd` to manage the lifecycle of the frontend server. Refer to the official documentation for more information.
+If there are no errors, you can now access the frontend at: http://localhost:4000 or `http://[IP_ADDRESS]:4000`
+
+### Running the Angular frontend with `pm2` and `systemd`
+
+Install `pm2`:
+
+```bash
+npm install -g pm2
+```
+
+Create a PM2 service file `~/frontend/app.json` and add the following:
+
+```json
+{
+    "apps": [
+        {
+            "name": "dspace-ui",
+            "cwd": "/home/dspace/frontend",
+            "script": "dist/server/main.js",
+            "instances": "2",
+            "exec_mode": "cluster",
+            "autorestart": true,
+            "watch": false,
+            "max_memory_restart": "1G",
+            "env": {
+                "NODE_ENV": "production"
+            }
+        }
+    ]
+}
+```
+
+Start the service:
+
+```bash
+pm2 start ~/frontend/app.json
+pm2 save
+```
+
+Now the Angular frontend service will start automatically during boot. You can check the status of the service by running `pm2 list`.
+
+Add this line in the `crontab` to restart the service automatically during boot:
+
+```bash
+@reboot pm2 resurrect
+```
+
+> **Note:** Refer to this [documentation](https://pm2.keymetrics.io/docs/usage/startup/) for more strategies to manage the `pm2` service.
 
 ## Reverse Proxy Using Caddy
 
