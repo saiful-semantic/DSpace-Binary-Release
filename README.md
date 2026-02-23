@@ -247,7 +247,7 @@ node ./dist/server/main.js
 
 If there are no errors, you can now access the frontend at: http://localhost:4000 or `http://[IP_ADDRESS]:4000`
 
-### Running the Angular frontend with `pm2` and `systemd`
+### Running the Angular frontend with `pm2`
 
 Install `pm2`:
 
