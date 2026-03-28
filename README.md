@@ -149,7 +149,7 @@ ssh -L 8080:localhost:8080 user@remote-server
 
 Then access the backend at: http://localhost:8080/server
 
-## Use `systemd` to run the backend in production
+## Production Deployment of Backend
 
 Create an environment file:
 
@@ -160,7 +160,7 @@ sudo nano /etc/dspace/dspace.env
 
 Copy the following content into the file:
 
-```bash
+```toml
 DSPACE_DIR=/home/dspace/backend
 LOGGING_CONFIG=/home/dspace/backend/config/log4j2.xml
 SERVER_PORT=8080
@@ -175,7 +175,7 @@ sudo nano /etc/systemd/system/dspace.service
 
 Copy the following content into the file:
 
-```systemd
+```toml
 [Unit]
 Description=DSpace Spring Boot Backend
 After=network.target postgresql.service
@@ -264,6 +264,14 @@ unzip /tmp/angular${VERSION}-dist.zip
 
 > The above commands will extract the `dist` folder into `/home/dspace/frontend/dist` folder.
 
+> [!NOTE]
+> **For production, use the following steps:**
+>
+> 1. [Customize the frontend](https://wiki.lyrasis.org/display/DSDOC9x/User+Interface+Customization)
+> 2. Prepare the production build using `npm run build:prod`
+> 3. Copy the `dist` folder into `/home/dspace/frontend/dist` folder
+> 4. Restart the frontend service as mentioned in following steps (hint: `pm2 restart all`)
+
 ## Create frontend config file
 
 ```bash
@@ -308,7 +316,7 @@ ssh -L 4000:localhost:4000 -L 8080:localhost:8080 user@remote-server
 
 Then access the frontend at: http://localhost:4000 and backend at: http://localhost:8080/server
 
-## Production Setup using `pm2`
+## Production Deployment of Frontend
 
 Install `pm2`:
 
