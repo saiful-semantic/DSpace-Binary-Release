@@ -16,11 +16,11 @@ DSpace consists of both a Java-based backend and an Angular-based frontend.
 * [Backend](https://github.com/DSpace/DSpace) provides a [REST API](https://github.com/DSpace/RestContract), along with other machine-based interfaces (e.g. OAI-PMH, SWORD, etc).
 * [Frontend](https://github.com/DSpace/dspace-angular/) is the User Interface built on the REST API.
 
-This repository contains binary releases of vanilla DSpace Backend and Frontend (Angular UI) components.
+This repository contains pre-built binary releases of vanilla DSpace Backend and Frontend (Angular UI) components.
 
 # How to Use the Backend Build
 
-Following are the steps to install and configure the DSpace backend build in Ubuntu 24.04 LTS or equivalent Linux distributions.
+Following are the steps to install and configure the DSpace 9.2 backend build in Ubuntu 24.04 LTS or equivalent Linux distributions.
 
 > Always refer to the official instruction in the [installation manual](https://wiki.lyrasis.org/display/DSDOC9x/Installing+DSpace) for the specific release for any additional information.
 
@@ -43,9 +43,15 @@ sudo apt update
 sudo apt install openjdk-17-jdk-headless ant postgresql
 ```
 
-> **Note:** The `postgresql-contrib` package is required for the `pgcrypto` extension, only if PostgreSQL 13 or below is installed.
+> [!NOTE]
+>
+> The `openjdk-17-jdk-headless` is a server-optimized JDK without GUI.
+>
+> Ubuntu 24.04 LTS comes with PostgreSQL 16, which has the `pgcrypto` extension enabled by default.
+>
+> For older versions of PostgreSQL (13 or older), the `postgresql-contrib` package must also be installed to enable the `pgcrypto` extension.
 
-### Solr 9.x Installation
+### Apache Solr 9.x Installation
 
 ```bash
 cd /tmp
@@ -54,9 +60,9 @@ tar xzf solr-9.10.1.tgz solr-9.10.1/bin/install_solr_service.sh --strip-componen
 sudo bash ./install_solr_service.sh solr-9.10.1.tgz
 ```
 
-> It will install Solr binaries and libraries into `/opt/solr` directory and data into `/var/solr/data` directory.
+The above commands will install Apache Solr binaries and libraries into `/opt/solr` directory and data into `/var/solr/data` directory.
 
-### Solr 9.x Configuration
+### Apache Solr 9.x Configuration
 
 Edit `/etc/default/solr.in.sh` and add the following:
 
@@ -101,6 +107,7 @@ cd dspace-installer
 cp config/local.cfg{.EXAMPLE,}
 nano config/local.cfg # or vi config/local.cfg
 ```
+
 > [!IMPORTANT]
 > Update these two settings at the minimum:
 >
@@ -141,10 +148,10 @@ http://localhost:8080/server/
 
 ### Remote access (for testing)
 
-If you are installing on a remote machine via SSH, use SSH tunnel to access the backend. For example:
+If you are installing on a remote machine via SSH, use [SSH tunnel](https://goteleport.com/blog/ssh-tunneling-explained/) to access the backend. For example:
 
 ```bash
-ssh -L 8080:localhost:8080 user@remote-server
+ssh -L 8080:localhost:8080 dspace@remote-server
 ```
 
 Then access the backend at: http://localhost:8080/server
@@ -160,7 +167,7 @@ sudo nano /etc/dspace/dspace.env
 
 Copy the following content into the file:
 
-```toml
+```ini
 DSPACE_DIR=/home/dspace/backend
 LOGGING_CONFIG=/home/dspace/backend/config/log4j2.xml
 SERVER_PORT=8080
@@ -175,7 +182,7 @@ sudo nano /etc/systemd/system/dspace.service
 
 Copy the following content into the file:
 
-```toml
+```ini
 [Unit]
 Description=DSpace Spring Boot Backend
 After=network.target postgresql.service
@@ -308,13 +315,17 @@ If there are no errors, you can now access the frontend at: http://localhost:400
 
 ### Remote access (for testing)
 
-If you are installing on a remote machine via SSH, use SSH tunnel to access the frontend. For example:
+If you are installing on a remote machine via SSH, use [SSH tunnel](https://goteleport.com/blog/ssh-tunneling-explained/) to access the frontend. For example:
 
 ```bash
-ssh -L 4000:localhost:4000 -L 8080:localhost:8080 user@remote-server
+ssh -L 4000:localhost:4000 -L 8080:localhost:8080 dspace@remote-server
 ```
 
 Then access the frontend at: http://localhost:4000 and backend at: http://localhost:8080/server
+
+> [!IMPORTANT]
+>
+> Both the endpoints, backend and frontend, must be accessible from the client machine for the frontend to work.
 
 ## Production Deployment of Frontend
 
