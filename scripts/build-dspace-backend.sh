@@ -28,7 +28,7 @@ fi
 # Determine Java version based on DSpace version
 if [ "$MAJOR_VERSION" = "7" ]; then
     JAVA_VERSION="11"
-elif [ "$MAJOR_VERSION" = "8" ] || [ "$MAJOR_VERSION" = "9" ]; then
+elif [ "$MAJOR_VERSION" = "8" ] || [ "$MAJOR_VERSION" = "9" ] || [ "$MAJOR_VERSION" = "10" ]; then
     JAVA_VERSION="17"
 else
     echo "Error: Unsupported DSpace version $VERSION"
