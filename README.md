@@ -122,25 +122,34 @@ bin/dspace database info
 Copy Solr cores from `/home/dspace/backend/solr` into Solr data directory:
 
 ```bash
-cp -r /home/dspace/backend/solr/* /var/solr/data/
+sudo cp -r /home/dspace/backend/solr/* /var/solr/data/
 sudo chown -R solr:solr /var/solr/data/
 sudo systemctl restart solr
 ```
 
-## Test the backend with embedded Tomcat
+## Test the backend with embedded Tomcat (DSpace 8.x and above)
 
 ```bash
-# Pattern: java -Ddspace.dir=[dspace.dir] -Dlogging.config=[dspace.dir]/config/log4j2.xml -jar [dspace.dir]/server-boot.jar
+# Pattern: java -Ddspace.dir=[dspace.dir] -Dlogging.config=[dspace.dir]/config/log4j2.xml -jar [dspace.dir]/webapps/server-boot.jar
 # For example:
-java -Ddspace.dir=/home/dspace/backend -Dlogging.config=/home/dspace/backend/config/log4j2.xml -jar /home/dspace/backend/server-boot.jar
+java -Ddspace.dir=/home/dspace/backend -Dlogging.config=/home/dspace/backend/config/log4j2.xml -jar /home/dspace/backend/webapps/server-boot.jar
 ```
+
+Wait for a minute or two for the first boot to complete.
 
 If there are no errors, you can access the backend at:
 http://localhost:8080/server/ or `http://[IP_ADDRESS]:8080`
 
 ## Use `systemd` to run the backend in production
 
-Create `/etc/dspace/dspace.env` and add the following (assuming backend is installed at `/home/dspace/backend`):
+Create an environment file:
+
+```bash
+sudo mkdir /etc/dspace
+sudo nano /etc/dspace/dspace.env
+```
+
+Copy the following content into the file:
 
 ```bash
 DSPACE_DIR=/home/dspace/backend
@@ -149,7 +158,13 @@ SERVER_PORT=8080
 JAVA_OPTS="-Xms512m -Xmx1g -XX:+UseG1GC"
 ```
 
-Edit `/etc/systemd/system/dspace.service` and add the following:
+Edit systemd service file:
+
+```bash
+sudo nano /etc/systemd/system/dspace.service
+```
+
+Copy the following content into the file:
 
 ```systemd
 [Unit]
@@ -201,9 +216,13 @@ journalctl -u dspace -f
 
 ### Troubleshooting
 
-- Look for clues in `/home/dspace/backend/logs/dspace.log` and `/var/solr/logs/solr.log`
-- Check if the database is running and accessible
-- Check if the solr server is running and accessible
+- Look for clues in the DSpace or Solr log files:
+    - `tail -f /home/dspace/backend/log/dspace.log`
+    - `sudo tail -f /var/solr/logs/solr.log`
+- Check if the database is running and accessible:
+    - `sudo systemctl status postgresql`
+- Check if the solr server is running and accessible:
+    - `sudo systemctl status solr`
 
 # How to Use the Frontend Build
 
