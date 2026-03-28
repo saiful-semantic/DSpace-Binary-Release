@@ -35,7 +35,7 @@ unzip -o source.zip -d ./${SOURCE_DIR}
 # Install dependencies and build
 cd "${SOURCE_DIR}/${ANGULAR_DIR}"
 echo "Installing dependencies..."
-if [ "$MAJOR_VERSION" = "9" ]; then
+if [ "$MAJOR_VERSION" = "9" ] || [ "$MAJOR_VERSION" = "10" ]; then
     echo "Using npm for DSpace Angular 9.0+"
     npm ci
     echo "Building project..."
