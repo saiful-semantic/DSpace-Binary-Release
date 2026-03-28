@@ -327,7 +327,7 @@ sudo npm install -g pm2
 Create a PM2 service file:
 
 ```bash
-sudo nano /home/dspace/frontend/app.json
+nano /home/dspace/frontend/app.json
 ```
 
 Add the following content:
@@ -427,7 +427,7 @@ For the reverse proxy setup, you will need to update the URLs in the frontend co
 ### Update backend configuration
 
 ```bash
-sudo nano /home/dspace/backend/config/local.cfg
+nano /home/dspace/backend/config/local.cfg
 ```
 
 Edit the following lines:
@@ -446,7 +446,7 @@ sudo systemctl restart dspace
 ### Update frontend configuration
 
 ```bash
-sudo nano /home/dspace/frontend/config/config.prod.yml
+nano /home/dspace/frontend/config/config.prod.yml
 ```
 
 Edit only the `rest` section in the file:
