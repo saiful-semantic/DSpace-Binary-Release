@@ -18,20 +18,34 @@ DSpace consists of both a Java-based backend and an Angular-based frontend.
 
 This repository contains binary releases of vanilla DSpace Backend and Frontend (Angular UI) components.
 
-## How to Use the Backend Build
+# How to Use the Backend Build
 
-Follow the instruction in the [installation manual](https://wiki.lyrasis.org/display/DSDOC9x/Installing+DSpace) for the specific release for more details.
+Following are the steps to install and configure the DSpace backend build in Ubuntu 24.04 LTS or equivalent Linux distributions.
 
-### Install Dependencies (JDK, PostgreSQL, Solr, etc.)
+> Always refer to the official instruction in the [installation manual](https://wiki.lyrasis.org/display/DSDOC9x/Installing+DSpace) for the specific release for any additional information.
+
+## Create DSpace User and Switch to it
+
+```bash
+sudo adduser dspace
+
+# Sudo access is required at least during the installation process
+sudo usermod -aG sudo dspace
+
+# Switch to the app user
+sudo su - dspace
+```
+
+## Install Dependencies (JDK, PostgreSQL, Solr, etc.)
 
 ```bash
 sudo apt update
-sudo apt install openjdk-17-jdk ant postgresql
+sudo apt install openjdk-17-jdk-headless ant postgresql
 ```
 
 > **Note:** The `postgresql-contrib` package is required for the `pgcrypto` extension, only if PostgreSQL 13 or below is installed.
 
-**Solr 9.x Installation:**
+### Solr 9.x Installation
 
 ```bash
 cd /tmp
@@ -42,7 +56,7 @@ sudo bash ./install_solr_service.sh solr-9.10.1.tgz
 
 > It will install Solr binaries and libraries into `/opt/solr` directory and data into `/var/solr/data` directory.
 
-**Solr 9.x Configuration:**
+### Solr 9.x Configuration
 
 Edit `/etc/default/solr.in.sh` and add the following:
 
@@ -50,36 +64,29 @@ Edit `/etc/default/solr.in.sh` and add the following:
 SOLR_OPTS="$SOLR_OPTS -Dsolr.config.lib.enabled=true -Djava.security.manager=allow"
 ```
 
-**Set resource limits for Solr:**
+### Set resource limits for Solr
 
 ```bash
 printf "solr hard nofile 65535\nsolr soft nofile 65535\nsolr hard nproc 65535\nsolr soft nproc 65535\n" | sudo tee /etc/security/limits.d/solr.conf > /dev/null
 ```
 
-**Enable and start Solr:**
+### Enable and start Solr
 
 ```bash
 sudo systemctl start solr
 sudo systemctl enable solr
 ```
 
-### Create app user, database user, database, enable pgcrypto
+## Create database user, database, enable pgcrypto
 
 ```bash
-sudo adduser dspace
 sudo -u postgres psql -c "CREATE USER dspace WITH PASSWORD 'strongPassword' CREATEDB;"
 sudo -u postgres createdb --owner=dspace --encoding=UTF8 dspace
-sudo -u postgres psql -c "CREATE EXTENSION pgcrypto;"
+sudo -u postgres psql -d dspace -c "CREATE EXTENSION pgcrypto;"
 ```
 
-### Download and Unzip the Backend Build
+## Download and Unzip the Backend Build
 
-**Switch to the app user:**
-```bash
-sudo su - dspace
-```
-
-**Download and unzip the required version:**
 ```bash
 mkdir ~/download
 cd ~/download
@@ -89,41 +96,49 @@ unzip dspace${VERSION}-installer.zip
 cd dspace-installer
 ```
 
-**Update the configuration:**
+### Update the configuration
+
 ```bash
 cp config/local.cfg{.EXAMPLE,}
-vi config/local.cfg
+nano config/local.cfg # or vi config/local.cfg
 ```
-> **Important:** Update `dspace.dir` and `db.*` settings at the minimum.
+> [!IMPORTANT]
+> Update these two settings at the minimum:
+>
+> * `dspace.dir=/home/dspace/backend`
+> * `db.password=strongPassword` # Update with your password
 
-**Deploy the build and migrate database:**
+### Deploy the build and migrate database
+
 ```bash
 ant fresh_install
-cd [dspace.dir]
+cd /home/dspace/backend
 bin/dspace database migrate
 bin/dspace database info
 ``` 
 
-### Configure Solr Cores
+## Configure Solr Cores
 
-Copy Solr cores from `[dspace.dir]/solr` into Solr data directory:
+Copy Solr cores from `/home/dspace/backend/solr` into Solr data directory:
 
 ```bash
-cp -r [dspace.dir]/solr/* /var/solr/data/
+cp -r /home/dspace/backend/solr/* /var/solr/data/
 sudo chown -R solr:solr /var/solr/data/
 sudo systemctl restart solr
 ```
 
-### Test the backend with embedded Tomcat
+## Test the backend with embedded Tomcat
 
 ```bash
-java -Ddspace.dir=[dspace.dir] -Dlogging.config=[dspace.dir]/config/log4j2.xml -jar [dspace.dir]/server-boot.jar
+# Pattern: java -Ddspace.dir=[dspace.dir] -Dlogging.config=[dspace.dir]/config/log4j2.xml -jar [dspace.dir]/server-boot.jar
+# For example:
+java -Ddspace.dir=/home/dspace/backend -Dlogging.config=/home/dspace/backend/config/log4j2.xml -jar /home/dspace/backend/server-boot.jar
 ```
 
 If there are no errors, you can access the backend at:
 http://localhost:8080/server/ or `http://[IP_ADDRESS]:8080`
 
-### Use `systemd` to run the backend in production
+## Use `systemd` to run the backend in production
 
 Create `/etc/dspace/dspace.env` and add the following (assuming backend is installed at `/home/dspace/backend`):
 
@@ -169,14 +184,16 @@ ProtectSystem=full
 WantedBy=multi-user.target
 ```
 
-**Reload and enable the service:**
+### Reload and enable the service
+
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable dspace
 sudo systemctl start dspace
 ```
 
-**Check the status:**
+### Check the status
+
 ```bash
 sudo systemctl status dspace
 journalctl -u dspace -f
@@ -184,19 +201,20 @@ journalctl -u dspace -f
 
 ### Troubleshooting
 
-- Look for clues in `[dspace.dir]/logs/dspace.log` and `/var/solr/logs/solr.log`
+- Look for clues in `/home/dspace/backend/logs/dspace.log` and `/var/solr/logs/solr.log`
 - Check if the database is running and accessible
 - Check if the solr server is running and accessible
 
-## How to Use the Frontend Build
+# How to Use the Frontend Build
 
-**THIS IS NOT FOR PRODUCTION**
+> [!WARNING]
+> **THIS IS NOT FOR PRODUCTION**
+>
+> This step is only for quick testing, to check if backend is working as expected. In production, the UI will need to be customized with a custom theme, at least for the landing page and the logo. After those changes the frontend should be built again.
+>
+> Follow the official [installation manual](https://wiki.lyrasis.org/display/DSDOC9x/Installing+DSpace#InstallingDSpace-InstallingtheFrontend(UserInterface)) for more details.
 
-This step is only for quick testing, to check if backend is working as expected. In production, the UI will need to be customized with a custom theme, at least for the landing page and the logo. After those changes the frontend should be built again.
-
-Follow the official [installation manual](https://wiki.lyrasis.org/display/DSDOC9x/Installing+DSpace#InstallingDSpace-InstallingtheFrontend(UserInterface)) for more details.
-
-### Install NodeJs using Node Version Manager (NVM)
+## Install NodeJs using Node Version Manager (NVM)
 
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
@@ -204,7 +222,7 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
 nvm install 22
 ```
 
-### Download and unzip the frontend build:
+## Download and unzip the frontend build
 
 ```bash
 cd ~/download
@@ -214,6 +232,7 @@ mkdir -p ~/frontend/config
 cd ~/frontend
 unzip ~/download/angular${VERSION}-dist.zip
 ```
+
 > The above commands will extract the `dist` folder into `~/frontend/dist` folder.
 
 Create `config/config.prod.yml` and add the following:    
@@ -234,11 +253,13 @@ rest:
   nameSpace: /server
 ```
 
-> **Note:** If you are running this on a VM or a remote machine, replace `localhost` with the IP address or the domain name of that machine.
+> [!NOTE]
+> If you are running this on a VM or a remote machine, replace `localhost` with the IP address or the domain name of that machine.
 
-> **Important:** If the host is changed above, the same host IP/domain name must be updated in the `config/local.cfg` in `dspace.server.url` and `dspace.ui.url` accordingly and backend service restarted.
+> [!IMPORTANT]
+> If the host is changed above, the same host IP/domain name must be updated in the `config/local.cfg` in `dspace.server.url` and `dspace.ui.url` accordingly and backend service restarted.
 
-### Test Run
+## Test Run
 
 ```bash
 cd ~/frontend
@@ -247,7 +268,7 @@ node ./dist/server/main.js
 
 If there are no errors, you can now access the frontend at: http://localhost:4000 or `http://[IP_ADDRESS]:4000`
 
-### Running the Angular frontend with `pm2`
+## Running the Angular frontend with `pm2`
 
 Install `pm2`:
 
@@ -277,7 +298,7 @@ Create a PM2 service file `~/frontend/app.json` and add the following:
 }
 ```
 
-Start the service:
+### Start the service
 
 ```bash
 pm2 start ~/frontend/app.json
@@ -298,11 +319,12 @@ Then, add the following line to your `crontab` with complete path of `pm2`. For 
 @reboot /home/dspace/.nvm/versions/node/v22.22.1/bin/pm2 resurrect
 ```
 
-> **Note:** Refer to this [documentation](https://pm2.keymetrics.io/docs/usage/startup/) for more strategies to manage the `pm2` service, such as `pm2` with `systemd` service.
+> [!NOTE]
+> Refer to this [documentation](https://pm2.keymetrics.io/docs/usage/startup/) for more strategies to manage the `pm2` service, such as `pm2` with `systemd` service.
 
 ## Reverse Proxy Using Caddy
 
->Reverse proxy setup is optional. If you are accessing DSpace from a different machine, you will need to set up a reverse proxy. Otherwise, you can skip this step.
+> Reverse proxy setup is optional. If you are accessing DSpace from a different machine, you will need to set up a reverse proxy. Otherwise, you can skip this step.
 
 If you already have Apache or Nginx installed, you may configure a new site/VirtualHost as per official documentation. However, on a fresh machine, Caddy is much easier to configure.
 
@@ -326,7 +348,7 @@ http://[IP_ADDRESS] {
 }
 ```
 
-**Reload Caddy:**
+### Reload Caddy
 
 ```bash
 sudo systemctl reload caddy
@@ -350,6 +372,9 @@ repository.university.edu {
 }
 ```
 
-> **Note:** Caddy will automatically obtain and renew Let's Encrypt certificates. It does not require tools like `certbot`.
+> [!NOTE]
+> Caddy will automatically obtain and renew Let's Encrypt certificates. It does not require tools like `certbot`.
 
-The above configuration will obviously require appropriate `dspace.server.url` and `dspace.ui.url` setting in `[dspace.dir]/config/local.cfg` as well as in the frontend configuration (`~/frontend/config/config.prod.yml`).
+## Configure Frontend URL
+
+The reverse proxy setup will also require updating `dspace.server.url` and `dspace.ui.url` setting in `[dspace.dir]/config/local.cfg` as well as in the frontend configuration (`~/frontend/config/config.prod.yml`).
