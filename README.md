@@ -88,8 +88,7 @@ sudo -u postgres psql -d dspace -c "CREATE EXTENSION pgcrypto;"
 ## Download and Unzip the Backend Build
 
 ```bash
-mkdir ~/download
-cd ~/download
+cd /tmp
 export VERSION=9_2
 wget https://github.com/saiful-semantic/DSpace-Binary-Release/releases/download/backend_${VERSION}/dspace${VERSION}-installer.zip
 unzip dspace${VERSION}-installer.zip
@@ -138,7 +137,17 @@ java -Ddspace.dir=/home/dspace/backend -Dlogging.config=/home/dspace/backend/con
 Wait for a minute or two for the first boot to complete.
 
 If there are no errors, you can access the backend at:
-http://localhost:8080/server/ or `http://[IP_ADDRESS]:8080`
+http://localhost:8080/server/
+
+### Remote access (for testing)
+
+If you are installing on a remote machine via SSH, use SSH tunnel to access the backend. For example:
+
+```bash
+ssh -L 8080:localhost:8080 user@remote-server
+```
+
+Then access the backend at: http://localhost:8080/server
 
 ## Use `systemd` to run the backend in production
 
@@ -233,28 +242,36 @@ journalctl -u dspace -f
 >
 > Follow the official [installation manual](https://wiki.lyrasis.org/display/DSDOC9x/Installing+DSpace#InstallingDSpace-InstallingtheFrontend(UserInterface)) for more details.
 
-## Install NodeJs using Node Version Manager (NVM)
+## Install NodeJs from official repository
 
 ```bash
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
-\. "$HOME/.nvm/nvm.sh"
-nvm install 22
+sudo apt update
+sudo apt install curl
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
 ```
 
 ## Download and unzip the frontend build
 
 ```bash
-cd ~/download
+cd /tmp
 export VERSION=9_2
 wget https://github.com/saiful-semantic/DSpace-Binary-Release/releases/download/angular_${VERSION}/angular${VERSION}-dist.zip
-mkdir -p ~/frontend/config
-cd ~/frontend
-unzip ~/download/angular${VERSION}-dist.zip
+mkdir -p /home/dspace/frontend/config
+cd /home/dspace/frontend
+unzip /tmp/angular${VERSION}-dist.zip
 ```
 
-> The above commands will extract the `dist` folder into `~/frontend/dist` folder.
+> The above commands will extract the `dist` folder into `/home/dspace/frontend/dist` folder.
 
-Create `config/config.prod.yml` and add the following:    
+## Create frontend config file
+
+```bash
+cd /home/dspace/frontend
+nano config/config.prod.yml
+```
+
+Add the following content:
 
 ```yaml
 # Frontend
@@ -272,30 +289,40 @@ rest:
   nameSpace: /server
 ```
 
-> [!NOTE]
-> If you are running this on a VM or a remote machine, replace `localhost` with the IP address or the domain name of that machine.
-
-> [!IMPORTANT]
-> If the host is changed above, the same host IP/domain name must be updated in the `config/local.cfg` in `dspace.server.url` and `dspace.ui.url` accordingly and backend service restarted.
-
 ## Test Run
 
 ```bash
-cd ~/frontend
+cd /home/dspace/frontend
 node ./dist/server/main.js
 ```
 
-If there are no errors, you can now access the frontend at: http://localhost:4000 or `http://[IP_ADDRESS]:4000`
+If there are no errors, you can now access the frontend at: http://localhost:4000
 
-## Running the Angular frontend with `pm2`
+### Remote access (for testing)
+
+If you are installing on a remote machine via SSH, use SSH tunnel to access the frontend. For example:
+
+```bash
+ssh -L 4000:localhost:4000 -L 8080:localhost:8080 user@remote-server
+```
+
+Then access the frontend at: http://localhost:4000 and backend at: http://localhost:8080/server
+
+## Production Setup using `pm2`
 
 Install `pm2`:
 
 ```bash
-npm install -g pm2
+sudo npm install -g pm2
 ```
 
-Create a PM2 service file `~/frontend/app.json` and add the following:
+Create a PM2 service file:
+
+```bash
+sudo nano /home/dspace/frontend/app.json
+```
+
+Add the following content:
 
 ```json
 {
@@ -320,64 +347,47 @@ Create a PM2 service file `~/frontend/app.json` and add the following:
 ### Start the service
 
 ```bash
-pm2 start ~/frontend/app.json
+pm2 start /home/dspace/frontend/app.json
 pm2 save
+pm2 list
 ```
 
-You can check the status of the service by running `pm2 list`. Use a `crontab` entry to restart the service during boot.
-
-First, get the complete path of `pm2` with this command:
+**Edit the `cron` file to start the service on boot:**
 
 ```bash
-which pm2
+crontab -e
 ```
 
-Then, add the following line to your `crontab` with complete path of `pm2`. For example:
+Add the following line to the `cron` file, then save and exit:
 
 ```bash
-@reboot /home/dspace/.nvm/versions/node/v22.22.1/bin/pm2 resurrect
+@reboot /usr/bin/pm2 resurrect > /dev/null 2>&1
 ```
 
 > [!NOTE]
 > Refer to this [documentation](https://pm2.keymetrics.io/docs/usage/startup/) for more strategies to manage the `pm2` service, such as `pm2` with `systemd` service.
 
-## Reverse Proxy Using Caddy
+# Production Setup with SSL
 
-> Reverse proxy setup is optional. If you are accessing DSpace from a different machine, you will need to set up a reverse proxy. Otherwise, you can skip this step.
+> [!IMPORTANT]
+> Reverse proxy setup is essential for production.
+>
+> While the official documentation gives examples of using both Nginx and Apache, Caddy is much easier to configure.
 
-If you already have Apache or Nginx installed, you may configure a new site/VirtualHost as per official documentation. However, on a fresh machine, Caddy is much easier to configure.
-
-**Install Caddy, if not already installed:**
+## Install Caddy
 
 ```bash
 sudo apt install caddy
 ```
 
-**Edit `/etc/caddy/Caddyfile` and add the following for local testing (non-SSL):**
+## Reverse Proxy Setup with Caddy
 
-```caddy
-http://[IP_ADDRESS] {
-    handle /server/* {
-        reverse_proxy 127.0.0.1:8080
-    }
+Assuming you have a domain name `repository.university.edu`:
 
-    handle {
-        reverse_proxy localhost:4000
-    }
-}
-```
+1. Add DNS A record for the domain name pointing to your server's IP address.
+2. Edit the `Caddyfile` and add the following content (replace `repository.university.edu` with your domain name):
 
-### Reload Caddy
-
-```bash
-sudo systemctl reload caddy
-```
-
-### For automatic HTTPS with Let's Encrypt (SSL)
-
-For this to work, you need to have a Fully Qualified Domain Name (FQDN) or a domain name pointing to your server. Here is a working example for `repository.university.edu`:
-
-```caddy
+```Caddyfile
 repository.university.edu {
     handle /server/* {
         reverse_proxy 127.0.0.1:8080 {
@@ -392,8 +402,60 @@ repository.university.edu {
 ```
 
 > [!NOTE]
+> Note the use of `header_up X-Forwarded-Proto https` to forward the protocol to the backend.
+>
 > Caddy will automatically obtain and renew Let's Encrypt certificates. It does not require tools like `certbot`.
 
-## Configure Frontend URL
+**Reload Caddy:**
 
-The reverse proxy setup will also require updating `dspace.server.url` and `dspace.ui.url` setting in `[dspace.dir]/config/local.cfg` as well as in the frontend configuration (`~/frontend/config/config.prod.yml`).
+```bash
+sudo systemctl reload caddy
+```
+
+## Update URLs in Backend and Frontend
+
+For the reverse proxy setup, you will need to update the URLs in the frontend configuration and the backend configuration.
+
+### Update backend configuration
+
+```bash
+sudo nano /home/dspace/backend/config/local.cfg
+```
+
+Edit the following lines:
+
+```bash
+dspace.server.url = https://repository.university.edu/server
+dspace.ui.url = https://repository.university.edu
+```
+
+Restart the backend service:
+
+```bash
+sudo systemctl restart dspace
+```
+
+### Update frontend configuration
+
+```bash
+sudo nano /home/dspace/frontend/config/config.prod.yml
+```
+
+Edit only the `rest` section in the file:
+
+```yaml
+# Backend
+rest:
+  ssl: true
+  host: repository.university.edu
+  port: 443
+  nameSpace: /server
+```
+
+Restart the frontend service:
+
+```bash
+pm2 restart all
+```
+
+After reload, you can access the frontend at: `https://repository.university.edu`
