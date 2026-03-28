@@ -403,8 +403,14 @@ sudo apt install caddy
 
 Assuming you have a domain name `repository.university.edu`:
 
-1. Add DNS A record for the domain name pointing to your server's IP address.
-2. Edit the `Caddyfile` and add the following content (replace `repository.university.edu` with your domain name):
+1. Add DNS `A` record for the domain name pointing to your server's IP address.
+2. Edit the `Caddyfile`:
+
+```bash
+sudo nano /etc/caddy/Caddyfile
+```
+
+Add the following content (replace `repository.university.edu` with your domain name):
 
 ```Caddyfile
 repository.university.edu {
@@ -421,14 +427,20 @@ repository.university.edu {
 ```
 
 > [!NOTE]
-> Note the use of `header_up X-Forwarded-Proto https` to forward the protocol to the backend.
->
 > Caddy will automatically obtain and renew Let's Encrypt certificates. It does not require tools like `certbot`.
 
 **Reload Caddy:**
 
 ```bash
 sudo systemctl reload caddy
+```
+
+If the DNS record is correctly set up, it will take less than a minute to get the SSL certificate. For any errors, check the syslog:
+
+```bash
+sudo journalctl -u caddy --no-pager -f
+# or 
+sudo tail -f /var/log/syslog | grep caddy
 ```
 
 ## Update URLs in Backend and Frontend
