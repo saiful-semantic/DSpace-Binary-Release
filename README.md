@@ -271,14 +271,6 @@ unzip /tmp/angular${VERSION}-dist.zip
 
 > The above commands will extract the `dist` folder into `/home/dspace/frontend/dist` folder.
 
-> [!NOTE]
-> **For production, use the following steps:**
->
-> 1. [Customize the frontend](https://wiki.lyrasis.org/display/DSDOC9x/User+Interface+Customization)
-> 2. Prepare the production build using `npm run build:prod`
-> 3. Copy the `dist` folder into `/home/dspace/frontend/dist` folder
-> 4. Restart the frontend service as mentioned in following steps (hint: `pm2 restart all`)
-
 ## Create frontend config file
 
 ```bash
@@ -385,6 +377,14 @@ Add the following line to the `cron` file, then save and exit:
 
 > [!NOTE]
 > Refer to this [documentation](https://pm2.keymetrics.io/docs/usage/startup/) for more strategies to manage the `pm2` service, such as `pm2` with `systemd` service.
+
+> [!NOTE]
+> **For production, use the following steps:**
+>
+> 1. [Customize the frontend](https://wiki.lyrasis.org/display/DSDOC9x/User+Interface+Customization) to create a theme and update the logo, etc.
+> 2. Prepare the production build using `npm run build:prod`
+> 3. Copy the `dist` folder into `/home/dspace/frontend/dist` folder
+> 4. Restart the frontend service (`pm2 restart all`)
 
 # Production Setup with SSL
 
