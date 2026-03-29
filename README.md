@@ -375,16 +375,12 @@ Add the following line to the `cron` file, then save and exit:
 @reboot /usr/bin/pm2 resurrect > /dev/null 2>&1
 ```
 
-> [!NOTE]
-> Refer to this [documentation](https://pm2.keymetrics.io/docs/usage/startup/) for more strategies to manage the `pm2` service, such as `pm2` with `systemd` service.
+### For Production Deployment of Customized Frontend
 
-> [!NOTE]
-> **For production, use the following steps:**
->
-> 1. [Customize the frontend](https://wiki.lyrasis.org/display/DSDOC9x/User+Interface+Customization) to create a theme and update the logo, etc.
-> 2. Prepare the production build using `npm run build:prod`
-> 3. Copy the `dist` folder into `/home/dspace/frontend/dist` folder
-> 4. Restart the frontend service (`pm2 restart all`)
+1. [Customize the frontend](https://wiki.lyrasis.org/display/DSDOC9x/User+Interface+Customization) to create a theme and update the logo, etc.
+2. Prepare the production build using `npm run build:prod`
+3. Copy the `dist` folder into `/home/dspace/frontend/dist` folder
+4. Restart the frontend service (`pm2 restart all`)
 
 # Production Setup with SSL
 
