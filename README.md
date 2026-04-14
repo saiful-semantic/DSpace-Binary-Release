@@ -40,7 +40,7 @@ sudo su - dspace
 
 ```bash
 sudo apt update
-sudo apt install openjdk-17-jdk-headless ant postgresql
+sudo apt install openjdk-17-jdk-headless ant postgresql zip curl
 ```
 
 > [!NOTE]
